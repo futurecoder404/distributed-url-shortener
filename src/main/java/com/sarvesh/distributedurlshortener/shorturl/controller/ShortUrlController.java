@@ -2,8 +2,7 @@ package com.sarvesh.distributedurlshortener.shorturl.controller;
 
 import com.sarvesh.distributedurlshortener.exception.RateLimitExceededException;
 import com.sarvesh.distributedurlshortener.ratelimit.RateLimitService;
-import com.sarvesh.distributedurlshortener.shorturl.dto.CreateShortUrlRequest;
-import com.sarvesh.distributedurlshortener.shorturl.dto.CreateShortUrlResponse;
+import com.sarvesh.distributedurlshortener.shorturl.dto.*;
 import com.sarvesh.distributedurlshortener.shorturl.service.ShortUrlService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -11,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import com.sarvesh.distributedurlshortener.shorturl.dto.MyUrlResponse;
-import com.sarvesh.distributedurlshortener.shorturl.dto.UrlAnalyticsResponse;
 
 @RestController
 @RequestMapping("/api/v1/short-urls")
@@ -106,6 +103,22 @@ public class ShortUrlController {
 
         return ResponseEntity.ok(
                 "Short URL deleted"
+        );
+    }
+
+    @PatchMapping("/{shortCode}")
+    public ResponseEntity<CreateShortUrlResponse>
+    updateUrl(
+            @PathVariable String shortCode,
+            @Valid @RequestBody
+            UpdateUrlRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                shortUrlService.updateUrl(
+                        shortCode,
+                        request
+                )
         );
     }
 }

@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.List;
 import com.sarvesh.distributedurlshortener.exception.UnauthorizedUrlAccessException;
+import com.sarvesh.distributedurlshortener.shorturl.dto.UpdateUrlRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -320,5 +321,36 @@ public class ShortUrlService {
 
         return shortUrl;
     }
+    public CreateShortUrlResponse updateUrl(
+            String shortCode,
+            UpdateUrlRequest request
+    ) {
 
+        ShortUrl shortUrl =
+                getOwnedUrl(shortCode);
+
+        shortUrl.setOriginalUrl(
+                request.getUrl()
+        );
+
+        shortUrlRepository.save(shortUrl);
+
+        redisTemplate.opsForValue().set(
+                shortCode,
+                request.getUrl()
+        );
+
+        return CreateShortUrlResponse.builder()
+                .originalUrl(
+                        shortUrl.getOriginalUrl()
+                )
+                .shortCode(
+                        shortUrl.getShortCode()
+                )
+                .shortUrl(
+                        "http://localhost:8080/"
+                                + shortUrl.getShortCode()
+                )
+                .build();
+    }
 }
