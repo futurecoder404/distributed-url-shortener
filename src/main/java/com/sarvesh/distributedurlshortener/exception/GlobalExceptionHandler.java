@@ -103,14 +103,15 @@ public class GlobalExceptionHandler {
         ApiErrorResponse errorResponse =
                 ApiErrorResponse.builder()
                         .timestamp(LocalDateTime.now())
-                        .status(410)
+                        .status(HttpStatus.GONE.value())
                         .message(ex.getMessage())
                         .build();
 
         return ResponseEntity
-                .status(410)
+                .status(HttpStatus.GONE)
                 .body(errorResponse);
     }
+
     @ExceptionHandler(
             CustomAliasAlreadyExistsException.class
     )
@@ -122,12 +123,52 @@ public class GlobalExceptionHandler {
         ApiErrorResponse errorResponse =
                 ApiErrorResponse.builder()
                         .timestamp(LocalDateTime.now())
-                        .status(409)
+                        .status(HttpStatus.CONFLICT.value())
                         .message(ex.getMessage())
                         .build();
 
         return ResponseEntity
-                .status(409)
+                .status(HttpStatus.CONFLICT)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(
+            ShortUrlInactiveException.class
+    )
+    public ResponseEntity<ApiErrorResponse>
+    handleShortUrlInactiveException(
+            ShortUrlInactiveException ex
+    ) {
+
+        ApiErrorResponse errorResponse =
+                ApiErrorResponse.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(HttpStatus.GONE.value())
+                        .message(ex.getMessage())
+                        .build();
+
+        return ResponseEntity
+                .status(HttpStatus.GONE)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(
+            UnauthorizedUrlAccessException.class
+    )
+    public ResponseEntity<ApiErrorResponse>
+    handleUnauthorizedUrlAccessException(
+            UnauthorizedUrlAccessException ex
+    ) {
+
+        ApiErrorResponse errorResponse =
+                ApiErrorResponse.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(403)
+                        .message(ex.getMessage())
+                        .build();
+
+        return ResponseEntity
+                .status(403)
                 .body(errorResponse);
     }
 }

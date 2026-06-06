@@ -2,9 +2,7 @@ package com.sarvesh.distributedurlshortener.shorturl.service;
 
 import com.sarvesh.distributedurlshortener.auth.entity.User;
 import com.sarvesh.distributedurlshortener.auth.repository.UserRepository;
-import com.sarvesh.distributedurlshortener.exception.CustomAliasAlreadyExistsException;
-import com.sarvesh.distributedurlshortener.exception.ShortUrlExpiredException;
-import com.sarvesh.distributedurlshortener.exception.ShortUrlNotFoundException;
+import com.sarvesh.distributedurlshortener.exception.*;
 import com.sarvesh.distributedurlshortener.shorturl.dto.CreateShortUrlRequest;
 import com.sarvesh.distributedurlshortener.shorturl.dto.CreateShortUrlResponse;
 import com.sarvesh.distributedurlshortener.shorturl.dto.MyUrlResponse;
@@ -19,6 +17,7 @@ import com.sarvesh.distributedurlshortener.shorturl.dto.UrlAnalyticsResponse;
 import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.List;
+import com.sarvesh.distributedurlshortener.exception.UnauthorizedUrlAccessException;
 
 @Service
 @RequiredArgsConstructor
@@ -53,20 +52,7 @@ public class ShortUrlService {
             shortCode = generateShortCode();
         }
 
-        Authentication authentication =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
-
-        String email =
-                authentication.getName();
-
-        User user =
-                userRepository.findByEmail(email)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "User not found"
-                                ));
+        User user = getCurrentUser();
 
         LocalDateTime expiresAt = null;
 
@@ -112,6 +98,12 @@ public class ShortUrlService {
                                 new ShortUrlNotFoundException(
                                         "Short URL not found"
                                 ));
+
+        if (!shortUrl.getIsActive()) {
+            throw new ShortUrlInactiveException(
+                    "Short URL is inactive"
+            );
+        }
 
         if (shortUrl.getExpiresAt() != null
                 && LocalDateTime.now()
@@ -186,20 +178,7 @@ public class ShortUrlService {
 
     public List<MyUrlResponse> getMyUrls() {
 
-        Authentication authentication =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
-
-        String email =
-                authentication.getName();
-
-        User user =
-                userRepository.findByEmail(email)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "User not found"
-                                ));
+        User user = getCurrentUser();
 
         return shortUrlRepository
                 .findByUser(user)
@@ -229,12 +208,7 @@ public class ShortUrlService {
     ) {
 
         ShortUrl shortUrl =
-                shortUrlRepository
-                        .findByShortCode(shortCode)
-                        .orElseThrow(() ->
-                                new ShortUrlNotFoundException(
-                                        "Short URL not found"
-                                ));
+                getOwnedUrl(shortCode);
 
         return UrlAnalyticsResponse.builder()
                 .originalUrl(
@@ -259,6 +233,92 @@ public class ShortUrlService {
                                         shortUrl.getExpiresAt()
                                 )
                 )
+                .active(
+                        shortUrl.getIsActive()
+                )
                 .build();
     }
+
+    public void deactivateUrl(
+            String shortCode
+    ) {
+
+        ShortUrl shortUrl =
+                getOwnedUrl(shortCode);
+
+        shortUrl.setIsActive(false);
+
+        shortUrlRepository.save(shortUrl);
+    }
+
+    public void activateUrl(
+            String shortCode
+    ) {
+
+        ShortUrl shortUrl =
+                getOwnedUrl(shortCode);
+
+        shortUrl.setIsActive(true);
+
+        shortUrlRepository.save(shortUrl);
+    }
+    public void deleteUrl(
+            String shortCode
+    ) {
+
+        ShortUrl shortUrl =
+                getOwnedUrl(shortCode);
+
+        shortUrlRepository.delete(shortUrl);
+
+        redisTemplate.delete(shortCode);
+    }
+
+    private User getCurrentUser() {
+
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        String email =
+                authentication.getName();
+
+        return userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "User not found"
+                        ));
+    }
+
+    private ShortUrl getOwnedUrl(
+            String shortCode
+    ) {
+
+        User currentUser =
+                getCurrentUser();
+
+        ShortUrl shortUrl =
+                shortUrlRepository
+                        .findByShortCode(shortCode)
+                        .orElseThrow(() ->
+                                new ShortUrlNotFoundException(
+                                        "Short URL not found"
+                                ));
+
+        if (!shortUrl.getUser()
+                .getId()
+                .equals(
+                        currentUser.getId()
+                )) {
+
+            throw new UnauthorizedUrlAccessException(
+                    "You do not own this URL"
+            );
+        }
+
+        return shortUrl;
+    }
+
 }

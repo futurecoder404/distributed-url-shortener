@@ -20,4 +20,6 @@ public class UrlAnalyticsResponse {
     private LocalDateTime expiresAt;
 
     private Boolean expired;
+
+    private Boolean active;
 }

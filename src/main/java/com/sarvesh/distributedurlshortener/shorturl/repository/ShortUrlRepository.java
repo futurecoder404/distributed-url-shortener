@@ -16,4 +16,5 @@ public interface ShortUrlRepository
     boolean existsByShortCode(String shortCode);
 
     List<ShortUrl> findByUser(User user);
+    void deleteByShortCode(String shortCode);
 }

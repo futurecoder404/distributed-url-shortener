@@ -64,4 +64,48 @@ public class ShortUrlController {
                 )
         );
     }
+
+    @PatchMapping("/{shortCode}/deactivate")
+    public ResponseEntity<String>
+    deactivateUrl(
+            @PathVariable String shortCode
+    ) {
+
+        shortUrlService.deactivateUrl(
+                shortCode
+        );
+
+        return ResponseEntity.ok(
+                "Short URL deactivated"
+        );
+    }
+
+    @PatchMapping("/{shortCode}/activate")
+    public ResponseEntity<String>
+    activateUrl(
+            @PathVariable String shortCode
+    ) {
+
+        shortUrlService.activateUrl(
+                shortCode
+        );
+
+        return ResponseEntity.ok(
+                "Short URL activated"
+        );
+    }
+    @DeleteMapping("/{shortCode}")
+    public ResponseEntity<String>
+    deleteUrl(
+            @PathVariable String shortCode
+    ) {
+
+        shortUrlService.deleteUrl(
+                shortCode
+        );
+
+        return ResponseEntity.ok(
+                "Short URL deleted"
+        );
+    }
 }
