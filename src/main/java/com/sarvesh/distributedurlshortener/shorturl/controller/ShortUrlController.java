@@ -1,0 +1,67 @@
+package com.sarvesh.distributedurlshortener.shorturl.controller;
+
+import com.sarvesh.distributedurlshortener.exception.RateLimitExceededException;
+import com.sarvesh.distributedurlshortener.ratelimit.RateLimitService;
+import com.sarvesh.distributedurlshortener.shorturl.dto.CreateShortUrlRequest;
+import com.sarvesh.distributedurlshortener.shorturl.dto.CreateShortUrlResponse;
+import com.sarvesh.distributedurlshortener.shorturl.service.ShortUrlService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import com.sarvesh.distributedurlshortener.shorturl.dto.MyUrlResponse;
+import com.sarvesh.distributedurlshortener.shorturl.dto.UrlAnalyticsResponse;
+
+@RestController
+@RequestMapping("/api/v1/short-urls")
+@RequiredArgsConstructor
+public class ShortUrlController {
+
+    private final ShortUrlService shortUrlService;
+    private final RateLimitService rateLimitService;
+
+    @PostMapping
+    public CreateShortUrlResponse createShortUrl(
+            @RequestBody CreateShortUrlRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+
+        String ipAddress =
+                httpServletRequest.getRemoteAddr();
+
+        boolean allowed =
+                rateLimitService.isAllowed(ipAddress);
+
+        if (!allowed) {
+
+            throw new RateLimitExceededException(
+                    "Too many requests. Try again later."
+            );
+        }
+
+        return shortUrlService.createShortUrl(request);
+    }
+
+    @GetMapping("/my-urls")
+    public ResponseEntity<List<MyUrlResponse>>
+    getMyUrls() {
+
+        return ResponseEntity.ok(
+                shortUrlService.getMyUrls()
+        );
+    }
+    @GetMapping("/{shortCode}/analytics")
+    public ResponseEntity<UrlAnalyticsResponse>
+    getAnalytics(
+            @PathVariable String shortCode
+    ) {
+
+        return ResponseEntity.ok(
+                shortUrlService.getAnalytics(
+                        shortCode
+                )
+        );
+    }
+}
