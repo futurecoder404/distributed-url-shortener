@@ -19,6 +19,8 @@ import java.util.Random;
 import java.util.List;
 import com.sarvesh.distributedurlshortener.exception.UnauthorizedUrlAccessException;
 import com.sarvesh.distributedurlshortener.shorturl.dto.UpdateUrlRequest;
+import com.sarvesh.distributedurlshortener.kafka.event.UrlClickedEvent;
+import com.sarvesh.distributedurlshortener.kafka.producer.UrlClickProducer;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ public class ShortUrlService {
     private final ShortUrlRepository shortUrlRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private final UserRepository userRepository;
+    private final UrlClickProducer urlClickProducer;
 
     public CreateShortUrlResponse createShortUrl(
             CreateShortUrlRequest request
@@ -115,10 +118,11 @@ public class ShortUrlService {
             );
         }
 
-        shortUrl.setClickCount(
-                shortUrl.getClickCount() + 1
+        urlClickProducer.publishClick(
+                new UrlClickedEvent(
+                        shortCode
+                )
         );
-        shortUrlRepository.save(shortUrl);
 
         String cachedUrl =
                 redisTemplate.opsForValue().get(shortCode);

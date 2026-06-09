@@ -46,6 +46,10 @@ public class SecurityConfig {
                                 "/*"
                         ).permitAll()
 
+                        .requestMatchers(
+                                "/api/v1/short-urls/test-kafka"
+                        ).permitAll()
+
                         .anyRequest()
                         .authenticated()
                 )

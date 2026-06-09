@@ -1,6 +1,8 @@
 package com.sarvesh.distributedurlshortener.shorturl.controller;
 
 import com.sarvesh.distributedurlshortener.exception.RateLimitExceededException;
+import com.sarvesh.distributedurlshortener.kafka.event.UrlClickedEvent;
+import com.sarvesh.distributedurlshortener.kafka.producer.UrlClickProducer;
 import com.sarvesh.distributedurlshortener.ratelimit.RateLimitService;
 import com.sarvesh.distributedurlshortener.shorturl.dto.*;
 import com.sarvesh.distributedurlshortener.shorturl.service.ShortUrlService;
@@ -9,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -18,6 +21,7 @@ public class ShortUrlController {
 
     private final ShortUrlService shortUrlService;
     private final RateLimitService rateLimitService;
+    private final UrlClickProducer urlClickProducer;
 
     @PostMapping
     public CreateShortUrlResponse createShortUrl(
@@ -49,6 +53,7 @@ public class ShortUrlController {
                 shortUrlService.getMyUrls()
         );
     }
+
     @GetMapping("/{shortCode}/analytics")
     public ResponseEntity<UrlAnalyticsResponse>
     getAnalytics(
@@ -91,6 +96,7 @@ public class ShortUrlController {
                 "Short URL activated"
         );
     }
+
     @DeleteMapping("/{shortCode}")
     public ResponseEntity<String>
     deleteUrl(
@@ -120,5 +126,17 @@ public class ShortUrlController {
                         request
                 )
         );
+    }
+
+    @GetMapping("/test-kafka")
+    public String testKafka() {
+
+        urlClickProducer.publishClick(
+                new UrlClickedEvent(
+                        "TEST123"
+                )
+        );
+
+        return "Event Sent";
     }
 }
